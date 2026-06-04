@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>TraderGuardians Proof Protocol</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#050810;--surface:#0c1120;--surface2:#111928;--border:#1e2d47;
+    --accent:#00d4ff;--accent2:#7b2fff;--accent3:#ff6b35;--gold:#f0b429;
+    --green:#00e676;--red:#ff4444;--text:#e8edf5;--muted:#6b7a99;
+    --mono:'Space Mono',monospace;--sans:'Syne',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+  /* HERO */
+  .hero{min-height:100svh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;position:relative;padding:60px 20px 100px;background:radial-gradient(ellipse at 50% 0%,rgba(0,212,255,.10) 0%,transparent 65%),radial-gradient(ellipse at 80% 90%,rgba(123,47,255,.07) 0%,transparent 55%)}
+  .hero::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(0,212,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.03) 1px,transparent 1px);background-size:32px 32px;pointer-events:none}
+  .hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.22);border-radius:100px;padding:6px 14px;font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:.14em;text-transform:uppercase;margin-bottom:28px;position:relative;z-index:1}
+  .hero-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:blink 2s infinite}
+  @keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}
+  .hero h1{font-size:clamp(30px,9vw,72px);font-weight:800;line-height:1.0;letter-spacing:-.03em;margin-bottom:10px;position:relative;z-index:1}
+  .hero h1 .cyan{color:var(--accent)}.hero h1 .purple{color:var(--accent2)}
+  .hero-sub{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.1em;margin-bottom:40px;position:relative;z-index:1;padding:0 10px}
+  .hero-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:320px;position:relative;z-index:1}
+  .hero-stat{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center}
+  .hero-stat .val{font-size:24px;font-weight:800;color:var(--accent);display:block;line-height:1;margin-bottom:4px}
+  .hero-stat .lbl{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+
+  /* BOTTOM NAV */
+  .nav{position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(5,8,16,.97);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid var(--border);display:flex;padding-bottom:env(safe-area-inset-bottom,0px)}
+  .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 8px;cursor:pointer;transition:all .2s;min-width:0}
+  .nav-icon{font-size:18px;line-height:1}
+  .nav-label{font-family:var(--mono);font-size:8px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);transition:color .2s;width:100%;text-align:center}
+  .nav-item.active .nav-label{color:var(--accent)}
+  .nav-item.active .nav-icon{filter:drop-shadow(0 0 6px var(--accent))}
+
+  /* SECTIONS */
+  .section{display:none;padding:24px 16px 110px;max-width:700px;margin:0 auto;min-height:100svh}
+  .section.active{display:block}
+  .section-tag{font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px}
+  .section-h2{font-size:clamp(20px,6vw,36px);font-weight:800;line-height:1.1;letter-spacing:-.02em;margin-bottom:20px}
+
+  /* LAYER CARDS */
+  .layers-grid{display:flex;flex-direction:column;gap:6px}
+  .layer-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:border-color .2s;user-select:none}
+  .layer-card.open{border-color:rgba(0,212,255,.4)}
+  .layer-header{display:flex;align-items:center;gap:12px;padding:14px}
+  .layer-num{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:700;flex-shrink:0}
+  .layer-header-text{flex:1;min-width:0}
+  .layer-title{font-size:13px;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .layer-subtitle{font-family:var(--mono);font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .layer-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+  .complexity-dots{display:flex;gap:3px}
+  .dot{width:5px;height:5px;border-radius:50%;background:var(--border)}
+  .dot.fill{background:var(--accent)}
+  .layer-chevron{color:var(--muted);font-size:10px;transition:transform .3s}
+  .layer-card.open .layer-chevron{transform:rotate(180deg)}
+  .layer-body{display:none;border-top:1px solid var(--border);padding:14px}
+  .layer-card.open .layer-body{display:block}
+
+  /* TECH BLOCKS */
+  .tech-block{background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:8px}
+  .tech-block:last-child{margin-bottom:0}
+  .tech-block-title{font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+  .tech-block p{font-size:13px;color:#c0cce0;line-height:1.65}
+  code{font-family:var(--mono);font-size:11px;background:rgba(0,212,255,.09);padding:1px 5px;border-radius:4px;color:var(--accent)}
+  .code-block{background:#060c1a;border:1px solid var(--border);border-radius:8px;padding:12px;font-family:var(--mono);font-size:10px;color:#8ba4c8;margin:8px 0;overflow-x:auto;line-height:1.75;-webkit-overflow-scrolling:touch}
+  .code-block .kw{color:var(--accent2)}.code-block .str{color:var(--green)}.code-block .cm{color:#3d5a7a}.code-block .fn{color:var(--accent)}.code-block .num{color:var(--gold)}
+  .pros-cons{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+  .pro-box,.con-box{background:var(--surface2);border-radius:8px;padding:10px}
+  .pro-box{border-left:3px solid var(--green)}.con-box{border-left:3px solid var(--red)}
+  .pro-box h4{color:var(--green);font-family:var(--mono);font-size:9px;letter-spacing:.1em;margin-bottom:5px}
+  .con-box h4{color:var(--red);font-family:var(--mono);font-size:9px;letter-spacing:.1em;margin-bottom:5px}
+  .pro-box li,.con-box li{font-size:12px;color:#b0bdd4;margin-left:12px;margin-bottom:3px}
+
+  /* BEYOND */
+  .beyond-list{display:flex;flex-direction:column;gap:10px}
+  .beyond-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;border-left:3px solid}
+  .beyond-card:nth-child(1){border-left-color:var(--accent)}.beyond-card:nth-child(2){border-left-color:var(--accent2)}.beyond-card:nth-child(3){border-left-color:var(--gold)}.beyond-card:nth-child(4){border-left-color:var(--green)}.beyond-card:nth-child(5){border-left-color:var(--accent3)}
+  .beyond-title{font-size:14px;font-weight:700;margin-bottom:6px}
+  .beyond-body{font-size:13px;color:#9aacc8;line-height:1.6}
+
+  /* COSTS */
+  .cost-phase{font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;padding:10px 12px;background:rgba(0,212,255,.05);border-radius:8px;margin:18px 0 8px;border:1px solid rgba(0,212,255,.1)}
+  .cost-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .cost-card-left{flex:1;min-width:0}
+  .cost-card-name{font-size:13px;font-weight:600;margin-bottom:3px}
+  .cost-card-who{font-family:var(--mono);font-size:9px;color:var(--muted)}
+  .cost-card-right{text-align:right;flex-shrink:0}
+  .cost-card-price{font-size:13px;font-weight:700;color:var(--gold);white-space:nowrap}
+  .cost-card-duration{font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:4px}
+  .cost-total{background:linear-gradient(135deg,rgba(0,212,255,.06),rgba(123,47,255,.06));border:1px solid rgba(0,212,255,.2);border-radius:10px;padding:14px;margin:8px 0 18px;display:flex;justify-content:space-between;align-items:center}
+  .cost-total-label{font-size:13px;font-weight:700}
+  .cost-total-value{font-size:16px;font-weight:800;color:var(--accent)}
+
+  /* BADGES */
+  .badge{display:inline-block;padding:2px 7px;border-radius:100px;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.04em}
+  .badge-green{background:rgba(0,230,118,.12);color:var(--green)}.badge-yellow{background:rgba(240,180,41,.12);color:var(--gold)}
+  .badge-red{background:rgba(255,68,68,.12);color:var(--red)}.badge-blue{background:rgba(0,212,255,.12);color:var(--accent)}
+  .badge-purple{background:rgba(123,47,255,.12);color:var(--accent2)}
+
+  /* MOAT */
+  .moat-list{display:flex;flex-direction:column;gap:10px}
+  .moat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px}
+  .moat-icon{font-size:22px;margin-bottom:8px;display:block}
+  .moat-title{font-size:14px;font-weight:700;margin-bottom:6px}
+  .moat-body{font-size:13px;color:#9aacc8;line-height:1.6}
+
+  /* VALUATION */
+  .val-list{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+  .val-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;position:relative;display:flex;align-items:center;gap:14px;overflow:hidden}
+  .val-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+  .val-card.c1::before{background:var(--accent)}.val-card.c2::before{background:var(--accent2)}.val-card.c3::before{background:var(--gold)}.val-card.c4::before{background:var(--green)}
+  .val-amount{font-size:26px;font-weight:800;letter-spacing:-.03em;line-height:1;flex-shrink:0}
+  .val-card.c1 .val-amount{color:var(--accent)}.val-card.c2 .val-amount{color:var(--accent2)}.val-card.c3 .val-amount{color:var(--gold)}.val-card.c4 .val-amount{color:var(--green)}
+  .val-right{flex:1;min-width:0}
+  .val-scenario{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+  .val-desc{font-size:12px;color:#9aacc8;line-height:1.5}
+
+  /* REVENUE */
+  .rev-list{display:flex;flex-direction:column;gap:8px;margin:14px 0}
+  .rev-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+  .rev-name{font-size:13px;font-weight:600;margin-bottom:6px}
+  .rev-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+  .rev-label{font-family:var(--mono);font-size:9px;color:var(--muted)}
+  .rev-value{font-family:var(--mono);font-size:11px;color:var(--text)}
+
+  /* ROADMAP */
+  .roadmap{position:relative;padding-left:22px}
+  .roadmap::before{content:'';position:absolute;left:5px;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,var(--accent),var(--accent2),var(--accent3))}
+  .roadmap-item{position:relative;margin-bottom:22px}
+  .roadmap-dot{position:absolute;left:-20px;top:3px;width:12px;height:12px;border-radius:50%;border:2px solid var(--accent);background:var(--bg)}
+  .roadmap-item:nth-child(2) .roadmap-dot{border-color:var(--accent2)}.roadmap-item:nth-child(3) .roadmap-dot{border-color:var(--gold)}.roadmap-item:nth-child(4) .roadmap-dot{border-color:var(--accent3)}.roadmap-item:nth-child(5) .roadmap-dot{border-color:var(--green)}
+  .roadmap-phase{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:3px}
+  .roadmap-item:nth-child(2) .roadmap-phase{color:var(--accent2)}.roadmap-item:nth-child(3) .roadmap-phase{color:var(--gold)}.roadmap-item:nth-child(4) .roadmap-phase{color:var(--accent3)}.roadmap-item:nth-child(5) .roadmap-phase{color:var(--green)}
+  .roadmap-title{font-size:15px;font-weight:700;margin-bottom:8px}
+  .roadmap-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px}
+  .roadmap-items{list-style:none;display:flex;flex-direction:column;gap:6px}
+  .roadmap-items li{display:flex;gap:8px;font-size:12px;color:#b0bdd4;align-items:flex-start}
+  .roadmap-items li::before{content:'→';color:var(--muted);flex-shrink:0}
+  .roadmap-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+
+  /* VERDICT */
+  .verdict-box{background:linear-gradient(135deg,rgba(0,212,255,.05),rgba(123,47,255,.05));border:1px solid rgba(0,212,255,.2);border-radius:14px;padding:18px;margin-top:20px}
+  .verdict-box h3{font-size:17px;font-weight:800;margin-bottom:10px;color:var(--accent)}
+  .verdict-box p{font-size:13px;color:#b8c8e0;line-height:1.75;margin-bottom:10px}
+  .tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+  .tag{padding:4px 10px;border-radius:100px;font-family:var(--mono);font-size:9px;border:1px solid}
+  .tag-c{border-color:var(--accent);color:var(--accent)}.tag-p{border-color:var(--accent2);color:var(--accent2)}.tag-g{border-color:var(--gold);color:var(--gold)}
+  .divider{border:none;border-top:1px solid var(--border);margin:18px 0}
+  ::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-badge">White Paper Tecnico v1.0</div>
+  <h1>TraderGuardians<br><span class="cyan">Proof</span> <span class="purple">Protocol</span></h1>
+  <p class="hero-sub">// SISTEMA DI VERIFICA TRUSTLESS PER TRADING</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><span class="val">8</span><span class="lbl">Layer tecnici</span></div>
+    <div class="hero-stat"><span class="val">$2M+</span><span class="lbl">Target anno 3</span></div>
+    <div class="hero-stat"><span class="val">0</span><span class="lbl">Competitor diretti</span></div>
+    <div class="hero-stat"><span class="val">~24m</span><span class="lbl">Finestra first mover</span></div>
+  </div>
+</div>
+
+<nav class="nav">
+  <div class="nav-item active" onclick="showSection('layers',this)"><span class="nav-icon">🔬</span><span class="nav-label">Layer</span></div>
+  <div class="nav-item" onclick="showSection('beyond',this)"><span class="nav-icon">🚀</span><span class="nav-label">Oltre</span></div>
+  <div class="nav-item" onclick="showSection('costs',this)"><span class="nav-icon">💰</span><span class="nav-label">Costi</span></div>
+  <div class="nav-item" onclick="showSection('protection',this)"><span class="nav-icon">🛡️</span><span class="nav-label">Moat</span></div>
+  <div class="nav-item" onclick="showSection('valuation',this)"><span class="nav-icon">📈</span><span class="nav-label">Valore</span></div>
+  <div class="nav-item" onclick="showSection('roadmap',this)"><span class="nav-icon">🗺️</span><span class="nav-label">Roadmap</span></div>
+</nav>
+
+<!-- LAYERS -->
+<div id="layers" class="section active">
+  <p class="section-tag">// ARCHITETTURA TECNICA</p>
+  <h2 class="section-h2">Gli 8 Layer del Proof Protocol</h2>
+  <div class="layers-grid">
+
+    <div class="layer-card" onclick="toggleLayer(this)">
+      <div class="layer-header">
+        <div class="layer-num" style="background:rgba(0,212,255,.1);color:var(--accent)">L1</div>
+        <div class="layer-header-text">
+          <div class="layer-title">EA MT5 + Firma Crittografica</div>
+          <div class="layer-subtitle">Cryptographic Trade Signing at Source</div>
+        </div>
+        <div class="layer-right">
+          <div class="complexity-dots"><div class="dot fill"></div><div class="dot fill"></div><div class="dot fill"></div><div class="dot"></div><div class="dot"></div></div>
+          <div class="layer-chevron">▼</div>
+        </div>
+      </div>
+      <div class="layer-body">
+        <div class="tech-block">
+          <div class="tech-block-title">Come funziona</div>
+          <p>L'Expert Advisor gira nel terminale MT5. Ad ogni trade cattura <strong>timestamp al millisecondo</strong>, prezzo, volume e stato conto. I dati vengono <strong>firmati con ECDSA (secp256k1)</strong> — lo stesso algoritmo di Bitcoin — con chiave privata che non lascia mai il device del trader.</p>
+        </div>
+        <div class="code-block">
+<span class="cm">// EA firma ogni trade</span><br>
+<span class="kw">struct</span> TradeEvent {<br>
+&nbsp;ulong ticket;<br>
+&nbsp;datetime timestamp_ms;<br>
+&nbsp;double price_open, price_close;<br>
+&nbsp;double volume; string symbol;<br>
+};<br>
+<span class="fn">string</span> hash = <span class="fn">SHA256</span>(TradeEvent);<br>
+<span class="fn">string</span> sig = <span class="fn">ECDSA_sign</span>(hash, priv_key);<br>
+<span class="fn">PublishToSolana</span>(hash, sig, pub_key);
+        </div>
+        <div class="tech-block">
+          <div class="tech-block-title">Perché è inattaccabile</div>
+          <p>Falsificare richiederebbe compromettere fisicamente il device del trader E retrodatare un blocco Solana già confermato — computazionalmente impossibile. Il timestamp blockchain è un <strong>anchor immutabile nella realtà</strong>.</p>
+        </div>
+        <div class="tech-block">
+          <div class="tech-block-title">Stack</div>
+          <p>MQL5 · <code>libsodium</code> · Solana (400ms finality, &lt;$0.001/tx) · IPFS · Secure Enclave per key storage.</p>
+        </div>
+        <div class="pros-cons">
+          <div class="pro-box"><h4>✓ VANTAGGI</h4><ul><li>Falsificazione retroattiva impossibile</li><li>Funziona offline (batch sync)</li><li>Costo on-chain irrisorio</li></ul></div>
+          <div class="con-box"><h4>✗ CRITICITÀ</h4><ul><li>Alcuni broker possono bloccare EA</li><li>Key recovery richiede UX curata</li><li>Onboarding tecnico necessario</li></ul></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer-card" onclick="toggleLayer(this)">
+      <div class="layer-header">
+        <div class="layer-num" style="background:rgba(123,47,255,.1);color:var(--accent2)">L2</div>
+        <div class="layer-header-text">
+          <div class="layer-title">Price Oracle Cross-Validation</div>
+          <div class="layer-subtitle">Verifica Prezzi vs Tick Data Reali</div>
+        </div>
+        <div class="layer-right">
+          <div class="complexity-dots"><div class="dot fill"></div><div class="dot fill"></div><div class="dot fill"></div><div class="dot fill"></div><div class="dot"></div></div>
+          <div class="layer-chevron">▼</div>
+        </div>
+      </div>
+      <div class="layer-body">
+        <div class="tech-block">
+          <div class="tech-block-title">Il problema che risolve</div>
+          <p>Un broker disonesto può alterare i prezzi mostrati. Il sistema confronta il prezzo dichiarato con <strong>fonti indipendenti multiple</strong>: Dukascopy tick data, Refinitiv, Bloomberg API, e altri nodi della rete TGPP in real-time.</p>
+        </div>
+        <div class="tech-block">
+          <div class="tech-block-title">Architettura Oracle</div>
+          <p>Rete di <strong>Price Oracle Nodes</strong> gestiti da partecipanti verificati (libp2p). Per ogni trade calcola il <strong>prezzo mediano pesato</strong> da almeno 7 oracle. Deviazione &gt;±0.3 pip → trade flaggato come anomalo.</p>
+        </div>
+        <div class="code-block">
+<span class="cm">// Oracle consensus</span><br>
+median = <span class="fn">weighted_median</span>(prices, reputation)<br>
+deviation = <span class="fn">abs</span>(claimed - median)<br>
+<span class="kw">if</span> deviation > <span class="num">0.3</span>: <span class="fn">flag</span>(<span class="str">"ANOMALY"</span>)<br>
+<span class="kw">else</span>: <span class="fn">verify</span>(<span class="str">"PRICE_OK"</span>)
+        </div>
+        <div class="tech-block">
+          <div class="tech-block-title">Il dataset più prezioso</div>
+          <p>Dopo 2+ anni, si accumula il <strong>database più completo al mondo di spread reali per broker</strong> — vendibile come prodotto separato di rating broker basato su dati oggettivi.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer-card" onclick="toggleLayer(this)">
+      <div class="layer-header">
+        <div class="layer-num" style="background:rgba(240,180,41,.1);color:var(--gold)">L3</div>
+        <div class="layer-header-text">
+          <div class="layer-title">Behavioral Biometrics</div>
+          <div class="layer-subtitle">Continuous Trader Identity Verification</div>
+        </div>
+        <div class="layer-right">
+          <div class="complexity-dots"><div class="dot fill"></div><div class="dot fill"></div><div class="dot fill"></div><div class="dot fill"></div><div class="dot fill"></div></div>
+          <div class="layer-chevron">▼</div>
+        </div>
+      </div>
+      <div class="layer-body">
+        <div class="tech-block">
+          <div class="tech-block-title">Cos'è e perché è diverso da tutto</div>
+          <p>Non verifica "chi è loggato" — verifica che <strong>la stessa persona stia operando sempre</strong>. Cattura pattern invisibili: velocity del mouse, cadenza dei click, ritmo decisionale (tempo chart→ordine), orari preferenziali, sequenze di navigazione.</p>
+        </div>
+        <div class="tech-block">
+          <div class="tech-block-title">Il modello ML</div>
+          <p>Un <strong>LSTM autoencoder</strong> si allena sulle prime 30 sessioni costruendo un "fingerprint comportamentale" — vettore latente 128D. Ogni nuova sessione viene confrontata: distanza coseno &gt;2.5σ = alert immediato. I raw data non lasciano mai il device.</p>
+        </div>
+        <div class="code-block">
+<span class="cm">// 47 segnali comportamentali</span><br>
+features = {<br>
+&nbsp;<span class="str">"mouse_velocity"</span>: <span class="num">342.1</span>, <span class="cm">// px/sec</span><br>
+&nbsp;<span class="str">"decision_latency"</span>: <span class="num">4.7</span>, <span class="cm">// sec</span><br>
+&nbsp;<span class="str">"keyboard_rhythm"</span>: [<span class="num">120</span>,<span class="num">95</span>,<span class="num">110</span>],<br>
+&nbsp;<span class="cm">// ... 44 altri segnali</span><br>
+}
+        </div>
+        <div class="tech-block">
+          <div class="tech-block-title">La domanda che nessuno risponde oggi</div>
+          <p>"<strong>È davvero lui che fa trading, o compra segnali?</strong>" Per i prop fund è la feature più critica. Un account con consistency score &gt;95% vale 10x rispetto a uno non verificato comportamentalmente.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer-card" onclick="toggleLayer(this)">
+      <div class="layer-header">
+        <div class="layer-num" style="background:rgba(0,230,118,.1);color:var(--green)">L4</div>
+        <div class="layer-header-text">
+          <div class="layer-title">Zero Knowledge Proofs</div>
+          <div class="layer-subtitle">Prove Verificabili Senza Rivelare Dati</div>
+        </div>
+        <div class="layer-right">
+          <div class="complexity-dots"><div class="dot fill"></div><div class="dot fill"></div><div class="dot fill"></div><div class="dot fill"></div><div class="dot fill"></div></div>
+          <div class="layer-chevron">▼</div>
+        </div>
+      </div>
+      <div class="layer-body">
+        <div class="tech-block">
+          <div class="tech-block-title">Il concetto in parole semplici</div>
+          <p>Dimostri che qualcosa è vero <strong>senza rivelare perché</strong>. Provi che drawdown &lt;10% senza mostrare nessun trade. Provi win rate &gt;60% senza rivelare la strategia. Provi +$50K di gain senza mostrare il saldo.</p>
+        </div>
+        <div class="tech-block">
+          <div class="tech-block-title">Stack tecnico</div>
+          <p><strong>Circom + SnarkJS</strong> per i circuiti ZK. <strong>Groth16</strong> proving system (prova ~200ms, verifica ~10ms). Deploy su Arbitrum L2. Ogni ZK certificate è un <strong>Soulbound Token</strong> non-trasferibile nel wallet del trader.</p>
+        </div>
+        <div class="code-block">
+<span class="cm">// Circuito ZK: win_rate &gt; 60%</span><br>
+<span class="kw">template</span> <span class="fn">WinRateProof</span>() {<br>
+&nbsp;<span class="kw">signal input</span> wins; <span class="cm">// privato</span><br>
+&nbsp;<span class="kw">signal input</span> total; <span class="cm">// privato</span><br>
+&nbsp;<span class="kw">signal output</span> verified; <span class="cm">// pubblico</span><br>
+&nbsp;component gte = <span class="fn">GreaterThan</span>(<span class="num">32</span>);<br>
+&nbsp;gte.in[<span class="num">0</span>] &lt;== wins * <span class="num">100</span>;<br>
+&nbsp;gte.in[<span class="num">1</span>] &lt;== total * <span class="num">60</span>;<br>
+&nbsp;verified &lt;== gte.out;<br>
+}
+        </div>
+      </div>
+    </div>
+
+    <div class="layer-card" onclick="toggleLayer(this)">
+      <div class="layer-header">
+        <div class="layer-num" style="background:rgba(255,107,53,.1);color:var(--accent3)">L5</div>
+        <div class="layer-header-text">
+          <div class="layer-title">Cross-Verification Network</div>
+          <div class="layer-subtitle">Distributed Consensus sulla Realtà</div>
+        </div>
+        <div class="layer-right">
+          <div class="complexity-dots"><div class="dot fill"></div><div class="dot fill"></div><div class="dot fill"></div><div class="dot fill"></div><div class="dot"></div></div>
+          <div class="layer-chevron">▼</div>
+        </div>
+      </div>
+      <div class="layer-body">
+        <div class="tech-block">
+          <div class="tech-block-title">Come funziona la rete</div>
+          <p>Ogni utente che fa girare l'EA diventa un <strong>validation node</strong>. In cambio riceve <strong>TGPT token</strong>. Flywheel: più utenti → più verifiche → più affidabilità → più valore → più utenti. Auto-sostenuto.</p>
+        </div>
+        <div class="tech-block">
+          <div class="tech-block-title">Meccanismo di consensus</div>
+          <p>11 validator selezionati casualmente per ogni trade. Approvato se ≥7/11 concordano. Validator disonesti: slashing dello stake. <strong>BFT-resistant fino al 33% di nodi malevoli.</strong> Reward: 0.001 TGPT/validazione corretta. Slash: -1 TGPT per validazione falsa.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer-card" onclick="toggleLayer(this)">
+      <div class="layer-header">
+        <div class="layer-num" style="background:rgba(0,212,255,.1);color:var(--accent)">L6</div>
+        <div class="layer-header-text">
+          <div class="layer-title">Biometric Identity Verification</div>
+          <div class="layer-subtitle">Verifica la Persona, Non Solo il Conto</div>
+        </div>
+        <div class="layer-right">
+          <div class="complexity-dots"><div class="dot fill"></div><div class="dot fill"></div><div class="dot fill"></div><div class="dot"></div><div class="dot"></div></div>
+          <div class="layer-chevron">▼</div>
+        </div>
+      </div>
+      <div class="layer-body">
+        <div class="tech-block">
+          <div class="tech-block-title">Il differenziatore più sottovalutato</div>
+          <p>MyFxBook verifica il conto. TGPP verifica la <strong>persona</strong>. Combina liveness detection (sequenza randomica di movimenti facciali), document verification KYC-grade, e binding con il behavioral fingerprint del L3. Risultato: dual-layer identity impossibile da falsificare.</p>
+        </div>
+        <div class="tech-block">
+          <div class="tech-block-title">Stack e Compliance</div>
+          <p><strong>Onfido API</strong> per KYC (~€1/utente). Nessun dato biometrico raw storato — solo commitment crittografici. <strong>GDPR-compliant by design</strong>. Operabile legalmente in EU dal giorno 1.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer-card" onclick="toggleLayer(this)">
+      <div class="layer-header">
+        <div class="layer-num" style="background:rgba(240,180,41,.1);color:var(--gold)">L7</div>
+        <div class="layer-header-text">
+          <div class="layer-title">Insurance Protocol</div>
+          <div class="layer-subtitle">Track Record come Collaterale Assicurativo</div>
+        </div>
+        <div class="layer-right">
+          <div class="complexity-dots"><div class="dot fill"></div><div class="dot fill"></div><div class="dot fill"></div><div class="dot"></div><div class="dot"></div></div>
+          <div class="layer-chevron">▼</div>
+        </div>
+      </div>
+      <div class="layer-body">
+        <div class="tech-block">
+          <div class="tech-block-title">Il concetto</div>
+          <p>Con 24 mesi di track record verificato TGPP, un trader può <strong>offrire garanzie reali agli investitori</strong>. Uno smart contract indennizza automaticamente gli investitori se la performance mensile scende sotto la soglia concordata, prelevando da un insurance pool on-chain.</p>
+        </div>
+        <div class="tech-block">
+          <div class="tech-block-title">Meccanismo del pool</div>
+          <p>I trader depositano % dei profitti in un <strong>mutual insurance pool</strong> on-chain. Premio calcolato algoritmicamente sul risk score storico: lower risk → lower premium → più attrattivo per investitori → più capitali disponibili.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layer-card" onclick="toggleLayer(this)">
+      <div class="layer-header">
+        <div class="layer-num" style="background:rgba(123,47,255,.15);color:var(--accent2)">L8</div>
+        <div class="layer-header-text">
+          <div class="layer-title">Decentralized Prop Firm</div>
+          <div class="layer-subtitle">🔥 Il Layer Più Rivoluzionario</div>
+        </div>
+        <div class="layer-right">
+          <div class="complexity-dots"><div class="dot fill"></div><div class="dot fill"></div><div class="dot fill"></div><div class="dot fill"></div><div class="dot fill"></div></div>
+          <div class="layer-chevron">▼</div>
+        </div>
+      </div>
+      <div class="layer-body">
+        <div class="tech-block">
+          <div class="tech-block-title">Il problema che elimina</div>
+          <p>FTMO e le prop firm attuali prendono <strong>20-50% dei profitti</strong>. Gli investitori retail non accedono a trader verificati. I trader bravi non hanno capitali. TGPP elimina il middleman: <strong>investitore ↔ trader verificato</strong> direttamente via smart contract.</p>
+        </div>
+        <div class="tech-block">
+          <div class="tech-block-title">Trading Vault — Smart Contract</div>
+          <p>Ogni trader verificato TGPP crea un vault che: accetta depositi, distribuisce profitti pro-quota settimanalmente, impone hard stop-loss automatici, e restituisce fondi agli investitori se i parametri vengono violati.</p>
+        </div>
+        <div class="code-block">
+<span class="cm">// TradingVault.sol (semplificato)</span><br>
+<span class="kw">contract</span> TradingVault {<br>
+&nbsp;<span class="kw">uint</span> maxDrawdown = <span class="num">10</span>;<br>
+&nbsp;<span class="kw">uint</span> profitSplit = <span class="num">70</span>; <span class="cm">// % trader</span><br><br>
+&nbsp;<span class="kw">function</span> <span class="fn">distributeProfit</span>() {<br>
+&nbsp;&nbsp;require(<span class="fn">TGPPOracle</span>.<span class="fn">verify</span>(trader));<br>
+&nbsp;&nbsp;<span class="fn">_splitProfits</span>(profitSplit);<br>
+&nbsp;}<br>
+&nbsp;<span class="kw">function</span> <span class="fn">emergencyStop</span>() {<br>
+&nbsp;&nbsp;require(drawdown > maxDrawdown);<br>
+&nbsp;&nbsp;<span class="fn">_returnFunds</span>();<br>
+&nbsp;}<br>
+}
+        </div>
+        <div class="tech-block">
+          <div class="tech-block-title">Il moat definitivo</div>
+          <p>Questo layer funziona <strong>solo se esiste il Proof Protocol sottostante</strong>. Chi costruisce il protocollo controlla il marketplace. Protocol fee: <strong>2% degli AUM</strong>. Con $100M gestiti → $2M/anno passivi.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- BEYOND -->
+<div id="beyond" class="section">
+  <p class="section-tag">// SI PUO ANDARE OLTRE?</p>
+  <h2 class="section-h2">5 Layer Ancora Inesplorati</h2>
+  <div class="beyond-list">
+    <div class="beyond-card">
+      <div class="beyond-title">🧠 AI Strategy Fingerprinting</div>
+      <div class="beyond-body">Ogni trader ha uno "stile" statisticamente unico: orari, timeframe, RR ratio, correlazione con news. Il modello costruisce il <strong>DNA strategico</strong> del trader. Qualsiasi deviazione improvvisa trigghera un alert — risolve il problema dell'account takeover graduale invisibile ai sistemi tradizionali.</div>
+    </div>
+    <div class="beyond-card">
+      <div class="beyond-title">📡 Broker Reputation Oracle</div>
+      <div class="beyond-body">Aggregando milioni di trade verificati cross-broker, TGPP accumula il <strong>dataset più completo al mondo di broker behavior</strong>: spread reali vs dichiarati, requote frequency, slippage distribution. Secondo prodotto vendibile — rating broker su dati reali, non recensioni manipolabili.</div>
+    </div>
+    <div class="beyond-card">
+      <div class="beyond-title">🔗 Cross-Broker Identity Linking</div>
+      <div class="beyond-body">Un trader su 3 broker diversi linka tutti gli account alla stessa identità TGPP via ZKP. Risultato: <strong>unified track record aggregato</strong> impossibile da ottenere altrove. Per investitori che vogliono vedere la carriera completa di un trader, questo è un differenziatore assoluto.</div>
+    </div>
+    <div class="beyond-card">
+      <div class="beyond-title">📊 On-Chain Performance Derivatives</div>
+      <div class="beyond-body">Con track record verificati on-chain si possono creare <strong>derivati sulla performance dei trader</strong>: futures sulla performance mensile, indici su basket di top-trader, prediction markets su benchmark. Mercato completamente vergine, zero competitor esistenti oggi.</div>
+    </div>
+    <div class="beyond-card">
+      <div class="beyond-title">🏆 Verified Trading Tournaments</div>
+      <div class="beyond-body">Tornei dove ogni trade è verificato in real-time on-chain — <strong>zero cheating possibile</strong>. Prize pool in smart contract, distribuzione automatica. I prop fund sponsorizzano i tornei come pipeline di talent discovery. Revenue stream B2B immediato fin dalla Fase 1.</div>
+    </div>
+  </div>
+</div>
+
+<!-- COSTS -->
+<div id="costs" class="section">
+  <p class="section-tag">// PIANO FINANZIARIO</p>
+  <h2 class="section-h2">Budget di Sviluppo</h2>
+
+  <div class="cost-phase">// FASE 1 — MVP (mesi 1-6)</div>
+  <div class="cost-card"><div class="cost-card-left"><div class="cost-card-name">EA MT5 con firma crittografica</div><div class="cost-card-who">MQL5 freelance</div></div><div class="cost-card-right"><div class="cost-card-duration">6 settimane</div><div class="cost-card-price">€1,500–3,000</div><span class="badge badge-red">CRITICO</span></div></div>
+  <div class="cost-card"><div class="cost-card-left"><div class="cost-card-name">Backend + Dashboard web</div><div class="cost-card-who">Sviluppo interno</div></div><div class="cost-card-right"><div class="cost-card-duration">2 mesi</div><div class="cost-card-price">€0</div><span class="badge badge-green">FACCIO IO</span></div></div>
+  <div class="cost-card"><div class="cost-card-left"><div class="cost-card-name">Integrazione Solana</div><div class="cost-card-who">Solana dev freelance</div></div><div class="cost-card-right"><div class="cost-card-duration">4 settimane</div><div class="cost-card-price">€3,000–6,000</div><span class="badge badge-yellow">ALTA</span></div></div>
+  <div class="cost-card"><div class="cost-card-left"><div class="cost-card-name">Price Oracle MVP</div><div class="cost-card-who">Backend dev freelance</div></div><div class="cost-card-right"><div class="cost-card-duration">3 settimane</div><div class="cost-card-price">€1,500–2,500</div><span class="badge badge-yellow">ALTA</span></div></div>
+  <div class="cost-total"><span class="cost-total-label">Totale Fase 1</span><span class="cost-total-value">€6,000–11,500</span></div>
+
+  <div class="cost-phase">// FASE 2 — ZKP + BEHAVIORAL (mesi 7-14)</div>
+  <div class="cost-card"><div class="cost-card-left"><div class="cost-card-name">ZK Circuits (Circom/SnarkJS)</div><div class="cost-card-who">ZK specialist freelance</div></div><div class="cost-card-right"><div class="cost-card-duration">2 mesi</div><div class="cost-card-price">€10,000–20,000</div><span class="badge badge-red">CRITICO</span></div></div>
+  <div class="cost-card"><div class="cost-card-left"><div class="cost-card-name">Behavioral ML model (LSTM)</div><div class="cost-card-who">ML engineer freelance</div></div><div class="cost-card-right"><div class="cost-card-duration">3 mesi</div><div class="cost-card-price">€15,000–30,000</div><span class="badge badge-yellow">ALTA</span></div></div>
+  <div class="cost-card"><div class="cost-card-left"><div class="cost-card-name">KYC Integration (Onfido)</div><div class="cost-card-who">~€1 per utente verificato</div></div><div class="cost-card-right"><div class="cost-card-duration">3 settimane</div><div class="cost-card-price">€1,500–3,000</div><span class="badge badge-blue">MEDIA</span></div></div>
+  <div class="cost-card"><div class="cost-card-left"><div class="cost-card-name">Security Audit completo</div><div class="cost-card-who">Audit firm specializzata</div></div><div class="cost-card-right"><div class="cost-card-duration">1 mese</div><div class="cost-card-price">€10,000–25,000</div><span class="badge badge-red">CRITICO</span></div></div>
+  <div class="cost-total"><span class="cost-total-label">Totale Fase 2</span><span class="cost-total-value">€36,500–78,000</span></div>
+
+  <div class="cost-phase">// FASE 3 — TRADING VAULT (mesi 15-24)</div>
+  <div class="cost-card"><div class="cost-card-left"><div class="cost-card-name">Smart contracts Trading Vault</div><div class="cost-card-who">Solidity dev senior</div></div><div class="cost-card-right"><div class="cost-card-duration">3 mesi</div><div class="cost-card-price">€20,000–40,000</div><span class="badge badge-red">CRITICO</span></div></div>
+  <div class="cost-card"><div class="cost-card-left"><div class="cost-card-name">Smart contract audit x2</div><div class="cost-card-who">Certik / ConsenSys Diligence</div></div><div class="cost-card-right"><div class="cost-card-duration">2 mesi</div><div class="cost-card-price">€35,000–70,000</div><span class="badge badge-red">NON SALTARE</span></div></div>
+  <div class="cost-card"><div class="cost-card-left"><div class="cost-card-name">Legal / MiFID II compliance</div><div class="cost-card-who">Avvocato crypto-fintech</div></div><div class="cost-card-right"><div class="cost-card-duration">ongoing</div><div class="cost-card-price">€8,000–20,000</div><span class="badge badge-red">CRITICO</span></div></div>
+  <div class="cost-total"><span class="cost-total-label">Totale Fase 3</span><span class="cost-total-value">€63,000–130,000</span></div>
+
+  <div class="verdict-box">
+    <h3>💡 Budget Totale vs €150K Disponibili</h3>
+    <p>Tutte e 3 le fasi costano indicativamente <strong>€105K–220K</strong>. Con €150K di runway e i ricavi che iniziano dalla Fase 1, il budget è gestibile senza investitori esterni — mantenendo il <strong>100% dell'equity</strong> fino a una posizione di forza.</p>
+    <p>Il Solana Foundation grant (€25–50K non diluitivi) riduce ulteriormente il rischio se approvato in parallelo alla Fase 2.</p>
+  </div>
+</div>
+
+<!-- PROTECTION -->
+<div id="protection" class="section">
+  <p class="section-tag">// DIFENDIBILITA</p>
+  <h2 class="section-h2">Come Costruire un Moat Reale</h2>
+  <div class="moat-list">
+    <div class="moat-card"><span class="moat-icon">📊</span><div class="moat-title">Data Moat — Il Più Forte</div><div class="moat-body">Il vero vantaggio è il <strong>dataset accumulato</strong>: milioni di trade verificati, modelli spread per broker, fingerprint comportamentali. Dopo 2 anni e 10,000 trader, nessun newcomer può replicarlo. Come Google Maps — impossibile ricostruire anni di dati da zero.</div></div>
+    <div class="moat-card"><span class="moat-icon">🌐</span><div class="moat-title">Network Effect Bifacciale</div><div class="moat-body">Più trader si verificano → più prezioso per investitori → più investitori → più capitali per i trader → più trader vogliono verificarsi. Un <strong>marketplace bifacciale</strong> come Uber — impossibile da replicare dopo la massa critica. Target: 1,000 trader = punto di non ritorno.</div></div>
+    <div class="moat-card"><span class="moat-icon">⚡</span><div class="moat-title">First Mover in ZK-Trading</div><div class="moat-body">Nessuno ha ancora deployato ZKP su track record trading in produzione. La <strong>finestra è aperta circa 18-24 mesi</strong> prima che player grandi (Chainalysis, ConsenSys) possano costruire qualcosa di simile. Il tempo è il vantaggio più prezioso adesso.</div></div>
+    <div class="moat-card"><span class="moat-icon">🔒</span><div class="moat-title">Licenza BSL (Business Source)</div><div class="moat-body">Il protocollo core viene rilasciato con <strong>licenza BSL</strong>: leggibile pubblicamente ma non utilizzabile commercialmente per 4 anni. In quei 4 anni si costruisce il data moat e il network effect. Stesso modello di Uniswap e HashiCorp.</div></div>
+    <div class="moat-card"><span class="moat-icon">🤝</span><div class="moat-title">Partnership Broker Esclusive</div><div class="moat-body">Integrazione diretta API con 1-2 broker tier-1 crea una barriera enorme. Il broker ha tutto l'interesse — TGPP porta trader verificati di qualità. Target EU: IC Markets, Pepperstone, XM.</div></div>
+    <div class="moat-card"><span class="moat-icon">🏅</span><div class="moat-title">Standard de-facto</div><div class="moat-body">L'obiettivo finale è diventare lo <strong>standard del settore</strong> come SSL per HTTPS o IFRS per la contabilità. Pubblico le specifiche come open standard, mantengo la reference implementation e il marketplace. Chi vuole costruire su TGPP usa il mio protocollo.</div></div>
+  </div>
+</div>
+
+<!-- VALUATION -->
+<div id="valuation" class="section">
+  <p class="section-tag">// ANALISI DI MERCATO</p>
+  <h2 class="section-h2">Quanto Può Valere</h2>
+  <div class="val-list">
+    <div class="val-card c1"><div class="val-amount">$2M</div><div class="val-right"><div class="val-scenario">Pessimista — Anno 3</div><div class="val-desc">Solo verifica base, 500 trader paganti a $49/mese, nessun prop firm deal.</div></div></div>
+    <div class="val-card c2"><div class="val-amount">$15M</div><div class="val-right"><div class="val-scenario">Base — Anno 4</div><div class="val-desc">5,000 trader, 2 enterprise prop firm, Insurance protocol attivo. Acquisizione da player settore.</div></div></div>
+    <div class="val-card c3"><div class="val-amount">$80M</div><div class="val-right"><div class="val-scenario">Ottimista — Anno 5</div><div class="val-desc">Trading Vault live, $50M AUM, standard de-facto europeo. Unicorn path avviato.</div></div></div>
+    <div class="val-card c4"><div class="val-amount">$500M+</div><div class="val-right"><div class="val-scenario">Moonshot — Anno 7+</div><div class="val-desc">Standard globale, $1B+ AUM, broker partnerships, derivati on-chain. Comparabile a FTMO ($700M).</div></div></div>
+  </div>
+  <hr class="divider">
+  <p class="section-tag">// REVENUE STREAMS</p>
+  <h2 class="section-h2" style="font-size:20px;margin-bottom:14px">Come Si Monetizza</h2>
+  <div class="rev-list">
+    <div class="rev-card"><div class="rev-name">Abbonamento Trader</div><div class="rev-row"><span class="rev-label">Modello</span><span class="rev-value">€29–79/mese</span></div><div class="rev-row"><span class="rev-label">Anno 2</span><span class="rev-value">€150K ARR</span></div><div class="rev-row"><span class="rev-label">Anno 4</span><span class="rev-value">€600K ARR</span></div></div>
+    <div class="rev-card"><div class="rev-name">Enterprise (Prop Firm)</div><div class="rev-row"><span class="rev-label">Modello</span><span class="rev-value">€2,000–10,000/mese</span></div><div class="rev-row"><span class="rev-label">Anno 2</span><span class="rev-value">€120K ARR</span></div><div class="rev-row"><span class="rev-label">Anno 4</span><span class="rev-value">€500K ARR</span></div></div>
+    <div class="rev-card"><div class="rev-name">Protocol Fee (AUM)</div><div class="rev-row"><span class="rev-label">Modello</span><span class="rev-value">2% annuo degli AUM</span></div><div class="rev-row"><span class="rev-label">Anno 2</span><span class="rev-value">€0</span></div><div class="rev-row"><span class="rev-label">Anno 4</span><span class="rev-value">€800K ARR</span></div></div>
+    <div class="rev-card"><div class="rev-name">Insurance Premium</div><div class="rev-row"><span class="rev-label">Modello</span><span class="rev-value">0.5–2% capitale assicurato</span></div><div class="rev-row"><span class="rev-label">Anno 4</span><span class="rev-value">€400K ARR</span></div></div>
+    <div class="rev-card" style="border-color:rgba(0,212,255,.3)"><div class="rev-name" style="color:var(--accent)">TOTALE STIMATO</div><div class="rev-row"><span class="rev-label">Anno 2</span><span class="rev-value" style="color:var(--accent);font-size:13px;font-weight:700">~€320K ARR</span></div><div class="rev-row"><span class="rev-label">Anno 4</span><span class="rev-value" style="color:var(--accent);font-size:13px;font-weight:700">~€2.5M ARR</span></div></div>
+  </div>
+</div>
+
+<!-- ROADMAP -->
+<div id="roadmap" class="section">
+  <p class="section-tag">// TIMELINE REALISTICA</p>
+  <h2 class="section-h2">Roadmap 36 Mesi</h2>
+  <div class="roadmap">
+
+    <div class="roadmap-item">
+      <div class="roadmap-dot"></div>
+      <div class="roadmap-phase">MESI 1–6 // ALPHA</div>
+      <div class="roadmap-title">MVP Centralizzato</div>
+      <div class="roadmap-card">
+        <ul class="roadmap-items">
+          <li>EA MT5: firma ECDSA + hash su Solana testnet</li>
+          <li>Backend Supabase + dashboard badge verificato pubblico</li>
+          <li>Beta chiusa con 20–50 trader selezionati</li>
+          <li>Price oracle MVP con Dukascopy tick data</li>
+        </ul>
+        <div class="roadmap-meta"><span class="badge badge-blue">Budget: €6–11K</span><span class="badge badge-green">100% self-funded</span></div>
+      </div>
+    </div>
+
+    <div class="roadmap-item">
+      <div class="roadmap-dot"></div>
+      <div class="roadmap-phase">MESI 7–12 // BETA</div>
+      <div class="roadmap-title">Lancio Pubblico + Primi Ricavi</div>
+      <div class="roadmap-card">
+        <ul class="roadmap-items">
+          <li>Lancio a pagamento: €29/mese base, €79/mese pro</li>
+          <li>Target: 200 trader paganti (€5,800/mese MRR)</li>
+          <li>Behavioral tracking MVP senza ML ancora</li>
+          <li>Pitch a 3–5 prop firm europee</li>
+          <li>Application Solana Foundation grant</li>
+        </ul>
+        <div class="roadmap-meta"><span class="badge badge-green">Target: €5K MRR</span><span class="badge badge-purple">Milestone: 1 enterprise deal</span></div>
+      </div>
+    </div>
+
+    <div class="roadmap-item">
+      <div class="roadmap-dot"></div>
+      <div class="roadmap-phase">MESI 13–20 // ZKP</div>
+      <div class="roadmap-title">Zero Knowledge + Behavioral ML</div>
+      <div class="roadmap-card">
+        <ul class="roadmap-items">
+          <li>ZK circuits per 5 claim principali su Arbitrum</li>
+          <li>LSTM behavioral model in produzione</li>
+          <li>KYC Onfido integration completa</li>
+          <li>Security audit completo</li>
+          <li>2,000 trader verificati — massa critica</li>
+        </ul>
+        <div class="roadmap-meta"><span class="badge badge-green">Target: €30K MRR</span><span class="badge badge-purple">Milestone: ZK SBT on-chain</span></div>
+      </div>
+    </div>
+
+    <div class="roadmap-item">
+      <div class="roadmap-dot"></div>
+      <div class="roadmap-phase">MESI 21–30 // PROTOCOL</div>
+      <div class="roadmap-title">Trading Vault Live</div>
+      <div class="roadmap-card">
+        <ul class="roadmap-items">
+          <li>Smart contracts Trading Vault in produzione</li>
+          <li>Insurance pool: $1M TVL iniziale</li>
+          <li>TGPT token launch (governance + utility)</li>
+          <li>Partnership ufficiale con 1–2 broker tier-1</li>
+          <li>5,000+ trader verificati, $10M AUM</li>
+        </ul>
+        <div class="roadmap-meta"><span class="badge badge-green">Target: €120K MRR</span><span class="badge badge-purple">Milestone: $10M TVL</span></div>
+      </div>
+    </div>
+
+    <div class="roadmap-item">
+      <div class="roadmap-dot"></div>
+      <div class="roadmap-phase">MESI 31–36 // SCALE</div>
+      <div class="roadmap-title">Standard de-facto Europeo</div>
+      <div class="roadmap-card">
+        <ul class="roadmap-items">
+          <li>10,000+ trader su 15+ paesi</li>
+          <li>$50M+ AUM gestiti sui Trading Vault</li>
+          <li>Broker Reputation Oracle come prodotto separato</li>
+          <li>Candidatura standard ESMA per track record verificati</li>
+          <li>Exit optionality: M&amp;A (TradingView, eToro, FTMO) o IPO path</li>
+        </ul>
+        <div class="roadmap-meta"><span class="badge badge-green">Target: €400K+ MRR</span><span class="badge badge-purple">Valutazione: $30–80M</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="verdict-box">
+    <h3>🎯 Strategia con €150K di Runway</h3>
+    <p>Con €150K di liquidità propria, ho abbastanza per coprire tutte e 3 le fasi senza cedere equity a nessuno. Arrivo al giorno in cui il prodotto vale €15–30M con il <strong>100% dell'ownership in mano</strong>.</p>
+    <p>Se e quando deciderò di prendere investitori, sarà da una posizione di forza — con traction reale, ricavi dimostrabili, e zero urgenza. Le condizioni saranno radicalmente diverse rispetto al cercare capitali senza prodotto.</p>
+    <p>Il Solana Foundation grant viene cercato in parallelo come acceleratore non diluitivo — se arriva, benissimo. Se non arriva, il piano non cambia.</p>
+    <div class="tag-row">
+      <span class="tag tag-c">#Zero Competitor</span>
+      <span class="tag tag-p">#100% Equity</span>
+      <span class="tag tag-g">#Bootstrap Viable</span>
+      <span class="tag tag-c">#Network Effect</span>
+      <span class="tag tag-p">#Data Moat</span>
+      <span class="tag tag-g">#Timing ZKP</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showSection(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    el.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function toggleLayer(card) {
+    const isOpen = card.classList.contains('open');
+    document.querySelectorAll('.layer-card').forEach(c => c.classList.remove('open'));
+    if (!isOpen) {
+      card.classList.add('open');
+      setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+    }
+  }
+</script>
+</body>
+</html>
